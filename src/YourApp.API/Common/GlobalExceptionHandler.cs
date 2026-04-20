@@ -28,6 +28,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             ValidationException ve  => (400, ve.Message,  ve.ErrorCode),
             NotFoundException nf    => (404, nf.Message,  nf.ErrorCode),
             ConflictException ce    => (409, ce.Message,  ce.ErrorCode),
+            UnauthorizedException ue => (401, ue.Message, ue.ErrorCode), // Trả về 401 chuẩn
             ForbiddenException      => (403, "Forbidden", "FORBIDDEN"),
             DomainException de      => (400, de.Message,  de.ErrorCode),
             _ => (500, "An unexpected error occurred.", "INTERNAL_SERVER_ERROR")

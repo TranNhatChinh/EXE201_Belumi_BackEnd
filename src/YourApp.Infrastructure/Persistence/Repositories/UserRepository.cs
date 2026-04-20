@@ -33,5 +33,22 @@ namespace YourApp.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync(cancellationToken);
             return user;
         }
+
+        public async Task<User?> GetByUserByRefreshTokenHashAsync(string hash, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .Include(u => u.RefreshTokens)
+                .FirstOrDefaultAsync(u => u.RefreshTokens.Any(t => t.TokenHash == hash), cancellationToken);
+        }
+
+        public async Task AddRefreshTokenAsync(RefreshToken token, CancellationToken cancellationToken = default)
+        {
+            await _context.RefreshTokens.AddAsync(token, cancellationToken);
+        }
+
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }
