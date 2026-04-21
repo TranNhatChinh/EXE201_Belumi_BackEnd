@@ -3,6 +3,8 @@ using YourApp.Infrastructure.Extensions;
 using YourApp.API.Endpoints;
 using Microsoft.OpenApi.Models;
 
+DotNetEnv.Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
