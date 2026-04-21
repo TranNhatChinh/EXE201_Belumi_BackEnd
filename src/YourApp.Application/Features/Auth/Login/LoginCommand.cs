@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using YourApp.Application.Common.Interfaces;
 using YourApp.Application.Interfaces.Repositories;
 using YourApp.Domain.Entities;
+using YourApp.Domain.Exceptions;
 using YourApp.Application.Mappers;
 using YourApp.Application.Common.Exceptions;
 
@@ -35,13 +36,19 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
     {
         var user = await _userRepository.GetByUsernameAsync(request.Username, cancellationToken);
         
-        if (user == null)
+        if (user == null || user.IsDeleted)
             throw new UnauthorizedException("Tài khoản không tồn tại trên hệ thống.");
+
+        if (!user.IsActive)
+            throw new UnauthorizedException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
 
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         
         if (result == PasswordVerificationResult.Failed)
             throw new UnauthorizedException("Mật khẩu không chính xác. Vui lòng thử lại.");
+
+        if (!user.IsEmailVerified)
+            throw new DomainException("Email của bạn chưa được xác thực. Vui lòng kiểm tra hộp thư hoặc yêu cầu gửi lại mã.", "EMAIL_NOT_VERIFIED");
 
         var accessToken = _jwtTokenGenerator.GenerateToken(user);
         var refreshToken = _jwtTokenGenerator.GenerateRefreshToken();

@@ -41,6 +41,12 @@ namespace YourApp.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(u => u.RefreshTokens.Any(t => t.TokenHash == hash), cancellationToken);
         }
 
+        public async Task<User?> GetByEmailVerificationTokenAsync(string token, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.EmailVerificationToken == token, cancellationToken);
+        }
+
         public async Task AddRefreshTokenAsync(RefreshToken token, CancellationToken cancellationToken = default)
         {
             await _context.RefreshTokens.AddAsync(token, cancellationToken);

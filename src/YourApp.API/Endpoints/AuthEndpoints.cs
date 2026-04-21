@@ -3,6 +3,8 @@ using YourApp.Application.Features.Auth.Register;
 using YourApp.Application.Features.Auth.Login;
 using YourApp.Application.Features.Auth.Refresh;
 using YourApp.Application.Features.Auth.Logout;
+using YourApp.Application.Features.Auth.VerifyEmail;
+using YourApp.Application.Features.Auth.ResendVerification;
 
 namespace YourApp.API.Endpoints
 {
@@ -48,6 +50,24 @@ namespace YourApp.API.Endpoints
             .RequireAuthorization() // Yêu cầu Access Token hợp lệ
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized);
+
+            group.MapPost("/verify-email", async (VerifyEmailCommand command, IMediator mediator) =>
+            {
+                var response = await mediator.Send(command);
+                return Results.Ok(response);
+            })
+            .WithName("VerifyEmail")
+            .Produces<VerifyEmailResponseDTO>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
+
+            group.MapPost("/resend-verification", async (ResendVerificationCommand command, IMediator mediator) =>
+            {
+                var response = await mediator.Send(command);
+                return Results.Ok(response);
+            })
+            .WithName("ResendVerification")
+            .Produces<ResendVerificationResponseDTO>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
 
             return app;
         }

@@ -8,15 +8,13 @@ using YourApp.Domain.Entities;
 
 namespace YourApp.Infrastructure.Services;
 
-public class EmailService : IMailService
+public class MailService : IMailService
 {
     private readonly MailSettings _settings;
-    private readonly ITemplateRenderer _renderer;
 
-    public EmailService(IOptions<MailSettings> settings, ITemplateRenderer renderer)
+    public MailService(IOptions<MailSettings> settings)
     {
         _settings = settings.Value;
-        _renderer = renderer;
     }
 
     public async Task SendVerificationAsync(User user, string token)
@@ -24,13 +22,24 @@ public class EmailService : IMailService
         var verifyUrl = $"{_settings.ClientUrl}/auth/verify-email?token={token}&email={user.Email}";
         var timestamp = DateTimeOffset.UtcNow.ToString("O");
         
-        // Sử dụng Template Engine (Scriban) để render body
-        var htmlBody = await _renderer.RenderAsync("VerifyMail", new
+        // Đọc tệp Template HTML từ thư mục Domain
+        var templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "VerifyMail.html");
+        
+        // Nếu không tìm thấy trong BaseDirectory (khi debug/run), thử tìm theo đường dẫn tương đối từ project
+        if (!File.Exists(templatePath))
         {
-            username = user.Username,
-            verify_url = verifyUrl,
-            timestamp
-        });
+            templatePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "YourApp.Domain", "Templates", "VerifyMail.html");
+        }
+
+        var htmlBody = await File.ReadAllTextAsync(templatePath);
+
+        // Thay thế các biến trong Template
+        htmlBody = htmlBody
+            .Replace("{{USERNAME}}", user.Username)
+            .Replace("{{VERIFY_URL}}", verifyUrl)
+            .Replace("{{ username }}", user.Username)
+            .Replace("{{ verify_url }}", verifyUrl)
+            .Replace("{{ timestamp }}", timestamp);
 
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(_settings.DisplayName, _settings.From));

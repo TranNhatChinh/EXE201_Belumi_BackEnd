@@ -13,7 +13,8 @@ namespace YourApp.Application.Mappers
         [MapperIgnoreTarget(nameof(User.CreatedAt))]
         [MapperIgnoreTarget(nameof(User.UpdatedAt))]
         [MapperIgnoreTarget(nameof(User.IsDeleted))]
-        [MapProperty(nameof(RegisterCommand.Password), nameof(User.PasswordHash))]
+        [MapperIgnoreTarget(nameof(User.PasswordHash))]
+        [MapperIgnoreTarget(nameof(User.Role))]
         public partial User MapToUser(RegisterCommand command);
 
         public partial RegisterResponseDTO MapToResponse(User user);

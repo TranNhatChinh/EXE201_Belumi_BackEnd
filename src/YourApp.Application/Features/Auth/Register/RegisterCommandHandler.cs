@@ -1,12 +1,12 @@
-    using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Security.Cryptography;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using YourApp.Application.Common.Exceptions;
+using YourApp.Application.Common.Interfaces;
 using YourApp.Application.Interfaces.Repositories;
 using YourApp.Application.Mappers;
 using YourApp.Domain.Entities;
+using YourApp.Domain.Enums;
 
 namespace YourApp.Application.Features.Auth.Register
 {
@@ -14,12 +14,19 @@ namespace YourApp.Application.Features.Auth.Register
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher<User> _passwordHasher;
-        private readonly AuthMapper _authMapper;            
-        public RegisterCommandHandler(IUserRepository userRepository, IPasswordHasher<User> passwordHasher, AuthMapper authMapper)
+        private readonly AuthMapper _authMapper;
+        private readonly IMailService _mailService;
+
+        public RegisterCommandHandler(
+            IUserRepository userRepository,
+            IPasswordHasher<User> passwordHasher,
+            AuthMapper authMapper,
+            IMailService mailService)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _authMapper = authMapper;
+            _mailService = mailService;
         }
 
         public async Task<RegisterResponseDTO> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -41,13 +48,31 @@ namespace YourApp.Application.Features.Auth.Register
             // 3. Map to Entity
             var user = _authMapper.MapToUser(request);
 
-            // 4. Hash Password (pass user object for password hashing context)
+            // 4. Hash Password
             user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
-            // 5. Save to database
+            // 5. Generate Email Verification Token
+            user.EmailVerificationToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
+            user.IsEmailVerified = false;
+            user.Role = Role.User; // Gán quyền mặc định
+
+            // 6. Save to database
             await _userRepository.AddAsync(user, cancellationToken);
 
-            return _authMapper.MapToResponse(user); 
+            // 7. Send Verification Email
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _mailService.SendVerificationAsync(user, user.EmailVerificationToken);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Email Error] {ex.Message}");
+                }
+            });
+            return _authMapper.MapToResponse(user);
         }
     }
 }

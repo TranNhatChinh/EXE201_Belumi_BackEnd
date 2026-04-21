@@ -1,11 +1,14 @@
+using Path = System.IO.Path;
 using YourApp.Application;
 using YourApp.Infrastructure.Extensions;
 using YourApp.API.Endpoints;
 using Microsoft.OpenApi.Models;
 
-DotNetEnv.Env.Load();
+// Load .env from root or parent directories
+DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();

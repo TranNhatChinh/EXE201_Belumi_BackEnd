@@ -8,8 +8,11 @@ using System.Text;
 using YourApp.Application.Interfaces.Repositories;
 using YourApp.Domain.Entities;
 using YourApp.Infrastructure.Persistence;
-using YourApp.Infrastructure.Persistence.Repositories;
+using YourApp.Application.Common.Interfaces;
+using YourApp.Infrastructure.Services;
 using YourApp.Infrastructure.Security;
+using YourApp.Infrastructure.Persistence.Repositories;
+using YourApp.Infrastructure.Configuration;
 using YourApp.Application.Common.Interfaces;
 
 namespace YourApp.Infrastructure.Extensions
@@ -55,6 +58,12 @@ namespace YourApp.Infrastructure.Extensions
             services.AddAuthorization();
 
             services.AddHttpContextAccessor();
+            
+            // SMTP Settings & Service
+            services.Configure<MailSettings>(configuration.GetSection("SMTP"));
+            services.AddSingleton<ITemplateRenderer, ScribanTemplateRenderer>();
+            services.AddScoped<IMailService, EmailService>();
+
             services.AddScoped<ICurrentUser, CurrentUser>();
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
