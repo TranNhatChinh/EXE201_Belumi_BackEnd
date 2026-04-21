@@ -36,12 +36,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
         var user = await _userRepository.GetByUsernameAsync(request.Username, cancellationToken);
         
         if (user == null)
-            throw new UnauthorizedException("Invalid credentials");
+            throw new UnauthorizedException("Tài khoản không tồn tại trên hệ thống.");
 
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         
         if (result == PasswordVerificationResult.Failed)
-            throw new UnauthorizedException("Invalid credentials");
+            throw new UnauthorizedException("Mật khẩu không chính xác. Vui lòng thử lại.");
 
         var accessToken = _jwtTokenGenerator.GenerateToken(user);
         var refreshToken = _jwtTokenGenerator.GenerateRefreshToken();

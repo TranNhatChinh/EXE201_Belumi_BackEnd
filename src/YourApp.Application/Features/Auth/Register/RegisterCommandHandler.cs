@@ -28,14 +28,14 @@ namespace YourApp.Application.Features.Auth.Register
             var existingByEmail = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
             if (existingByEmail != null)
             {
-                throw new ConflictException($"User with email '{request.Email}' already exists.");
+                throw new ConflictException("Email này đã được sử dụng bởi một tài khoản khác.");
             }
 
             // 2. Check if username exists
             var existingByUsername = await _userRepository.GetByUsernameAsync(request.Username, cancellationToken);
             if (existingByUsername != null)
             {
-                throw new ConflictException($"User with username '{request.Username}' already exists.");
+                throw new ConflictException("Tên đăng nhập này đã tồn tại trên hệ thống.");
             }
 
             // 3. Map to Entity

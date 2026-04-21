@@ -47,6 +47,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             {
                 Title  = title,
                 Status = status,
+                Detail = exception.Message,
                 Extensions =
                 {
                     ["errorCode"] = errorCode,

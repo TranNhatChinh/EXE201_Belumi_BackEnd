@@ -31,13 +31,13 @@ public class RefreshCommandHandler : IRequestHandler<RefreshCommand, RefreshResp
         var user = await _userRepository.GetByUserByRefreshTokenHashAsync(tokenHash, cancellationToken);
 
         if (user == null)
-            throw new UnauthorizedException("Invalid refresh token");
+            throw new UnauthorizedException("Phiên đăng nhập không tồn tại hoặc Token không hợp lệ.");
 
         // 3. Tìm chính xác Token entity trong collection của User để kiểm tra trạng thái
         var refreshToken = user.RefreshTokens.FirstOrDefault(t => t.TokenHash == tokenHash);
 
         if (refreshToken == null || !refreshToken.IsActive)
-            throw new UnauthorizedException("Invalid or expired refresh token");
+            throw new UnauthorizedException("Refresh Token đã hết hạn hoặc đã bị thu hồi. Vui lòng đăng nhập lại.");
 
         // 4. Tạo Access Token mới
         var newAccessToken = _jwtTokenGenerator.GenerateToken(user);

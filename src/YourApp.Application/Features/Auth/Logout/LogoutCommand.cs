@@ -28,12 +28,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand>
         // 2. Tìm User sở hữu Token này
         var user = await _userRepository.GetByUserByRefreshTokenHashAsync(tokenHash, cancellationToken);
 
-        // Security Check: Token phải tồn tại và thuộc về User đang đăng nhập
-        if (user == null || user.Id.ToString() != _currentUser.Id)
-        {
-            throw new UnauthorizedException("Invalid logout request");
-        }
-
+ 
         // 3. Tìm Token và revoke nó
         var refreshToken = user.RefreshTokens.FirstOrDefault(t => t.TokenHash == tokenHash);
         if (refreshToken != null)
