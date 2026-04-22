@@ -5,6 +5,8 @@ using YourApp.Application.Features.Auth.Refresh;
 using YourApp.Application.Features.Auth.Logout;
 using YourApp.Application.Features.Auth.VerifyEmail;
 using YourApp.Application.Features.Auth.ResendVerification;
+using YourApp.Application.Features.Auth.GetMe;
+using System.Security.Claims;
 
 namespace YourApp.API.Endpoints
 {
@@ -69,6 +71,20 @@ namespace YourApp.API.Endpoints
             .Produces<ResendVerificationResponseDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
 
+
+            group.MapGet("/me", async (HttpContext context, IMediator mediator) =>
+            {
+                var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? context.User.FindFirst("sub")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Results.Unauthorized();
+                var response = await mediator.Send(new GetMeQuery(userId));
+                return Results.Ok(response);
+            })
+.RequireAuthorization()
+.WithName("GetMe")
+.Produces<GetMeResponseDTO>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status401Unauthorized);
             return app;
         }
     }

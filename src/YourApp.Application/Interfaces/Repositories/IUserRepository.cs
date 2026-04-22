@@ -13,5 +13,8 @@ namespace YourApp.Application.Interfaces.Repositories
         Task<User?> GetByEmailVerificationTokenAsync(string token, CancellationToken cancellationToken = default);
         Task AddRefreshTokenAsync(RefreshToken token, CancellationToken cancellationToken = default);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
+
+        //
+        Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }
