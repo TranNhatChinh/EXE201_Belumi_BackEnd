@@ -71,5 +71,6 @@ app.UseAuthorization();
 
 // Map Minimal API Endpoints
 app.MapAuthEndpoints();
+app.MapSkinEndpoints();
 
 app.Run();

@@ -13,7 +13,7 @@ using YourApp.Infrastructure.Services;
 using YourApp.Infrastructure.Security;
 using YourApp.Infrastructure.Persistence.Repositories;
 using YourApp.Infrastructure.Configuration;
-using YourApp.Application.Common.Interfaces;
+using YourApp.Application.Interfaces;
 
 namespace YourApp.Infrastructure.Extensions
 {
@@ -66,6 +66,14 @@ namespace YourApp.Infrastructure.Extensions
 
             services.AddScoped<ICurrentUser, CurrentUser>();
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+            // Skin Analysis Service
+            services.AddMemoryCache();
+            services.AddHttpClient<ISkinAnalysisService, SkinAnalysisService>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+            services.AddScoped<ISkinAnalysisService, SkinAnalysisService>();
 
             return services;
         }
