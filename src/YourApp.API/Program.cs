@@ -1,29 +1,28 @@
-using Path = System.IO.Path;
 using YourApp.Application;
 using YourApp.Infrastructure.Extensions;
+using YourApp.Infrastructure.Middleware;
 using YourApp.API.Endpoints;
 using Microsoft.OpenApi.Models;
 
-// Load .env from root or parent directories
+// Load .env từ root hoặc parent directories
 DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-// Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Belumi API", Version = "v1" });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Nhập JWT token"
+        Name        = "Authorization",
+        Type        = SecuritySchemeType.Http,
+        Scheme      = "Bearer",
+        BearerFormat = "Firebase JWT",
+        In          = ParameterLocation.Header,
+        Description = "Nhập Firebase ID Token"
     });
-
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -32,7 +31,7 @@ builder.Services.AddSwaggerGen(options =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    Id   = "Bearer"
                 }
             },
             Array.Empty<string>()
@@ -45,17 +44,25 @@ builder.Services.AddProblemDetails();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
-    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    options.SerializerOptions.Converters.Add(
+        new System.Text.Json.Serialization.JsonStringEnumConverter());
     options.SerializerOptions.PropertyNameCaseInsensitive = true;
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+        policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 });
 
 // Register Layers
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -63,14 +70,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("AllowFrontend");
 app.UseExceptionHandler();
 
-app.UseAuthentication();
+// Firebase Middleware thay thế JWT Authentication
+app.UseMiddleware<FirebaseAuthMiddleware>();
+
 app.UseAuthorization();
 
-// Map Minimal API Endpoints
-app.MapAuthEndpoints();
+// Map Endpoints (bỏ MapAuthEndpoints vì Firebase lo auth)
 app.MapSkinEndpoints();
 
 app.Run();

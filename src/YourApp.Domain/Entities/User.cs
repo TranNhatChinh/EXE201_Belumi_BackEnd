@@ -6,20 +6,16 @@ using YourApp.Domain.Enums;
 
 namespace YourApp.Domain.Entities
 {
+    /// <summary>
+    /// User entity - đã loại bỏ toàn bộ auth fields (PasswordHash, EmailVerification, RefreshTokens).
+    /// Firebase xử lý auth. FirebaseUid là key liên kết với Firebase.
+    /// </summary>
     public class User : BaseEntity
     {
-        public required string Username { get; set; }
-        public string PasswordHash { get; set; } = string.Empty;
+        public required string FirebaseUid { get; set; }
         public required string Email { get; set; }
-        public bool IsActive { get; set; } = true;
         public string? FullName { get; set; }
-
-        public bool IsEmailVerified { get; set; } = false;
-        public string? EmailVerificationToken { get; set; }
-        public DateTime? EmailVerificationTokenExpiry { get; set; }
-
-        public Role Role { get; set; }
-        
-        public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+        public bool IsActive { get; set; } = true;
+        public Role Role { get; set; } = Role.User;
     }
 }

@@ -1,74 +1,47 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using YourApp.Application.Interfaces.Repositories;
-using YourApp.Domain.Entities;
-using YourApp.Infrastructure.Persistence;
-using YourApp.Application.Common.Interfaces;
-using YourApp.Infrastructure.Services;
-using YourApp.Infrastructure.Security;
-using YourApp.Infrastructure.Persistence.Repositories;
-using YourApp.Infrastructure.Configuration;
 using YourApp.Application.Interfaces;
+using YourApp.Infrastructure.Persistence;
+using YourApp.Infrastructure.Persistence.Repositories;
+using YourApp.Infrastructure.Services;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 
 namespace YourApp.Infrastructure.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructureServices(
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
-            // Configure DbContext (using in-memory db for demonstration or sqlite/sqlserver, assuming SQL Server for now)
-            // You can replace UseSqlServer with your preferred provider.
+            // DbContext - Postgres (giữ nguyên từ belumi)
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+            // Repositories
             services.AddScoped<IUserRepository, UserRepository>();
-            
-            // Register PasswordHasher
-            services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-            // JWT Authentication
-            var jwtSettings = new JwtSettings();
-            configuration.Bind(JwtSettings.SectionName, jwtSettings);
-            
-            services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+            // Firebase Init (thay thế JWT auth)
+            var firebaseJson = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS") 
+                               ?? configuration["FIREBASE_CREDENTIALS"];
 
-            services.AddAuthentication(options =>
+            if (string.IsNullOrEmpty(firebaseJson))
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+                throw new InvalidOperationException("FIREBASE_CREDENTIALS is not set in the environment or configuration.");
+            }
+
+            FirebaseApp.Create(new AppOptions
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSettings.Issuer,
-                ValidAudience = jwtSettings.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
-                ClockSkew = TimeSpan.Zero
+                Credential = GoogleCredential.FromJson(firebaseJson)
             });
 
-            services.AddAuthorization();
-
-            services.AddHttpContextAccessor();
-            
-            // SMTP Settings & Service
-            services.Configure<MailSettings>(configuration.GetSection("SMTP"));
-            services.AddSingleton<ITemplateRenderer, ScribanTemplateRenderer>();
-            services.AddScoped<IMailService, EmailService>();
-
-            services.AddScoped<ICurrentUser, CurrentUser>();
-            services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-
-            // Skin Analysis Service
+            // Memory cache (cho SkinAnalysis)
             services.AddMemoryCache();
+
+            // Skin Analysis Service (giữ nguyên)
             services.AddHttpClient<ISkinAnalysisService, SkinAnalysisService>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(30);
